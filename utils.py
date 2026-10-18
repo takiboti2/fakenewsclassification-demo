@@ -1,5 +1,6 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from pathlib import Path
 RANDOM_SEED = 42
 
 def process_data():
@@ -24,7 +25,8 @@ def process_data():
 
     return cleaned
 
-def split_data(df):
+def split_data():
+    df = process_data()
     #returns as X_train, X_val, X_test, y_train, y_val, y_test
     train_df, temp_df = train_test_split(
         df,
@@ -39,6 +41,12 @@ def split_data(df):
         stratify = temp_df["fake"]
     )
 
+    train_df.to_csv("data/train.csv", index=False)
+
+    val_df.to_csv("data/val.csv", index=False)
+
+    test_df.to_csv("data/test.csv", index=False)
+
     X_train, y_train = train_df["full_text"], train_df["fake"]
 
     X_val, y_val = val_df["full_text"], val_df["fake"]
@@ -46,3 +54,26 @@ def split_data(df):
     X_test, y_test = test_df["full_text"], test_df["fake"]
 
     return X_train, X_val, X_test, y_train, y_val, y_test
+
+def load_splits():
+
+    counter = 0
+    paths = {}
+    splits = ["train", "val", "test"]
+    for split in splits:
+        paths[split] = Path(f"data/{split}.csv")
+
+        if paths[split].is_file():
+            counter += 1
+
+    if counter != 3:
+        return split_data()
+
+    dfs = {}
+    Xs = {}
+    ys = {}
+    for split in splits:
+        dfs[split] = pd.read_csv(paths[split])
+        Xs[split], ys[split] = dfs[split]["full_text"], dfs["split"]["fake"]
+
+    return (*Xs.values(), *ys.values())
