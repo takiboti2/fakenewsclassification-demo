@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from pathlib import Path
+import re
 RANDOM_SEED = 42
 
 def process_data():
@@ -21,6 +22,12 @@ def process_data():
 
     df_raw["full_text"] = df_raw["title"] + " " + df_raw["text"]
 
+    df_raw["full_text"] = df_raw["full_text"].str.replace(
+    r"^[^\n]*?\(Reuters\)\s*[-–—]\s*",
+    "",
+    regex=True,
+    flags=re.IGNORECASE
+    )
     cleaned = df_raw[["full_text", "fake"]]
 
     return cleaned
@@ -65,8 +72,9 @@ def load_splits():
 
         if paths[split].is_file():
             counter += 1
+            print(counter)
 
-    if counter != 3:
+    if counter == 3:
         return split_data()
 
     dfs = {}
