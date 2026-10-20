@@ -2,34 +2,53 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from pathlib import Path
 import re
+from lingua import Language, LanguageDetectorBuilder
 RANDOM_SEED = 42
 
+def load_data():
+    df_raw = pd.read_csv("data/WELFake_Dataset.csv")
+
+    df_raw = df_raw.drop(columns=["Unnamed: 0"])
+    df_raw = df_raw.rename({"label": "labels"}, axis=1)
+
+    df_raw = df_raw.drop_duplicates()
+    df_raw["full_text"] = df_raw["title"].fillna("").str.strip() + " " + df_raw["text"].fillna("").str.strip()
+    return df_raw
+def is_english(text):
+    if not isinstance(text, str) or not text.strip():
+        return False
+
+    detector = (
+    LanguageDetectorBuilder
+    .from_all_languages()
+    .build()
+)
+
+    language = detector.detect_language_of(text[:2000])
+
+    return language == Language.ENGLISH
+
 def process_data():
-    true = pd.read_csv("data/True.csv")
+    df =load_data()
+    df["full_text"] = df["title"].fillna("").str.strip() + " " + df["text"].fillna("").str.strip()
 
-    fake = pd.read_csv("data/Fake.csv")
-
-    true["fake"] = 0
-
-    fake["fake"] = 1 
-
-    #boolean column for fake, 1 is fake, 0 is true
-
-    df_raw = pd.concat([true, fake])
-
-    df_raw = (df_raw.sample(frac=1,
-                            random_state=42)).reset_index(drop=True)
-
-    df_raw["full_text"] = df_raw["title"] + " " + df_raw["text"]
-
-    df_raw["full_text"] = df_raw["full_text"].str.replace(
-    r"^[^\n]*?\(Reuters\)\s*[-–—]\s*",
+    df["full_text"] = df["full_text"].str.replace(
+    r"^[A-Z][A-Z\s,.'/-]{0,80}\s+\(Reuters\)\s*[-–—]\s*",
     "",
-    regex=True,
-    flags=re.IGNORECASE
+    regex=True
     )
-    cleaned = df_raw[["full_text", "fake"]]
+    #remove reuters source tags
+    
+    english_mask = df["title"].apply(is_english)
 
+    df = df[english_mask]
+    
+
+
+    cleaned = df[["title","labels"]]
+    cleaned = (cleaned.sample(frac=1,
+                    random_state=RANDOM_SEED)
+                    .reset_index(drop=True))
     return cleaned
 
 def split_data():
@@ -39,13 +58,13 @@ def split_data():
         df,
         test_size=0.30,
         random_state=RANDOM_SEED,
-        stratify= df["fake"]
+        stratify= df["labels"]
     )
     val_df, test_df = train_test_split(
         temp_df,
         test_size=0.50,
         random_state=RANDOM_SEED,
-        stratify = temp_df["fake"]
+        stratify = temp_df["labels"]
     )
 
     train_df.to_csv("data/train.csv", index=False)
@@ -54,11 +73,11 @@ def split_data():
 
     test_df.to_csv("data/test.csv", index=False)
 
-    X_train, y_train = train_df["full_text"], train_df["fake"]
+    X_train, y_train = train_df["title"], train_df["labels"]
 
-    X_val, y_val = val_df["full_text"], val_df["fake"]
+    X_val, y_val = val_df["title"], val_df["labels"]
 
-    X_test, y_test = test_df["full_text"], test_df["fake"]
+    X_test, y_test = test_df["title"], test_df["labels"]
 
     return X_train, X_val, X_test, y_train, y_val, y_test
 
@@ -74,7 +93,7 @@ def load_splits():
             counter += 1
             print(counter)
 
-    if counter == 3:
+    if counter != 3:
         return split_data()
 
     dfs = {}
@@ -82,6 +101,6 @@ def load_splits():
     ys = {}
     for split in splits:
         dfs[split] = pd.read_csv(paths[split])
-        Xs[split], ys[split] = dfs[split]["full_text"], dfs["split"]["fake"]
+        Xs[split], ys[split] = dfs[split]["title"], dfs[split]["labels"]
 
     return (*Xs.values(), *ys.values())
