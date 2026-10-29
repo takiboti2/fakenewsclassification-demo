@@ -2,6 +2,11 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from pathlib import Path
 import re
+import numpy as np
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+from datasets import Dataset
+from transformers import AutoTokenizer,  AutoModelForSequenceClassification
+
 from lingua import Language, LanguageDetectorBuilder
 RANDOM_SEED = 42
 
@@ -104,3 +109,51 @@ def load_splits():
         Xs[split], ys[split] = dfs[split]["title"], dfs[split]["labels"]
 
     return (*Xs.values(), *ys.values())
+
+
+def init_model(model_name):
+    model = AutoModelForSequenceClassification.from_pretrained(
+        model_name,
+        num_labels=2,
+        id2label={0: "True", 1:"Fake"},
+        label2id={"True": 0, "Fake": 0}
+    )
+    return model
+
+def tokenize_dataset(x, y, model_name):
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+    dataset = Dataset.from_dict({
+        "text": x.fillna("").astype(str).tolist(),
+        "labels": y.astype(int).tolist()
+    })
+
+    def tokenize(batch):
+        return tokenizer(
+            batch["text"],
+            truncation=True,
+            max_length=256
+        )
+
+    return dataset.map(
+        tokenize,
+        batched=True
+    )
+
+def compute_metrics(eval_pred):
+    logits, labels = eval_pred
+    predictions = np.argmax(logits, axis=-1)
+
+    precision, recall, f1, _ = precision_recall_fscore_support(
+        labels,
+        predictions,
+        average="macro",
+        zero_division=0,
+    )
+
+    return {
+        "accuracy": accuracy_score(labels, predictions),
+        "precision_macro": precision,
+        "recall_macro": recall,
+        "f1_macro": f1,
+    }
