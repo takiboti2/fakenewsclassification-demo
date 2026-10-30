@@ -6,9 +6,15 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 MODEL_PATH = "model"
 
+TEMPERATURE = 2.71
+
 tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
 model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH)
 model.eval()
+
+print(model.config.id2label)
+print(model.config.num_labels)
+print(model.config._name_or_path)
 
 def predict(headline):
     if not headline.strip():
@@ -22,8 +28,8 @@ def predict(headline):
     )
 
     with torch.inference_mode():
-        logits = model(**inputs).logits
-        probabilities = torch.softmax(logits, dim=-1)[0]
+        logits = model(**inputs, ).logits
+        probabilities = torch.softmax(logits /TEMPERATURE, dim=-1)[0]
 
     return {
         model.config.id2label[i]: float(probabilities[i])

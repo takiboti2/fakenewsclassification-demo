@@ -1,4 +1,4 @@
 gradio
+safetensors
 torch
 transformers
-safetensors
