@@ -13,13 +13,24 @@ from lingua import Language, LanguageDetectorBuilder
 RANDOM_SEED = 42
 
 def load_data():
+    #simple loading utility function, used for later processing pipeline steps and eda
+    #does limited cleaning and preprocessing, makes a full_text column, with na handling
+    #removes trailing whitespace from title and text, and drops duplicates
+    #but keeps missing values for data quality checks
     df_raw = pd.read_csv("data/WELFake_Dataset.csv")
 
     df_raw = df_raw.drop(columns=["Unnamed: 0"])
     df_raw = df_raw.rename({"label": "labels"}, axis=1)
-
+    #limited cleaning and preprocessing. remove trailing whitespace and drop duplicates
+    #keep missing values at this step
+    df_raw["title"] = df_raw["title"].str.strip() 
+    df_raw["text"] = df_raw["text"].str.strip()
+    #make a full text column, fillna with empty strings so rows with either missing title or text dont get coalesced to na
+    df_raw["full_text"] = df_raw["title"].fillna("") + " " + df_raw["text"].fillna("")
     df_raw = df_raw.drop_duplicates()
     df_raw["full_text"] = df_raw["title"].fillna("").str.strip() + " " + df_raw["text"].fillna("").str.strip()
+    
+
     return df_raw
 def is_english(text):
     if not isinstance(text, str) or not text.strip():
