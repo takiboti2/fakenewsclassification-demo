@@ -6,7 +6,7 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 MODEL_PATH = "model"
 
-TEMPERATURE = 2.71
+TEMPERATURE = 2
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
 model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH)
