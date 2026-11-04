@@ -93,7 +93,10 @@ SOURCE_PATTERN = re.compile(
 )
 
 
-def clean_headline(text):
+REMOVED_WORDS = re.compile(r"(?<!\w)factbox(?!\w)", flags=re.IGNORECASE)
+
+
+def clean_title(text):
     """Remove media markers and configured outlet names, including in sentences."""
     text = unicodedata.normalize("NFKC", str(text))
     text = text.strip()
@@ -107,21 +110,22 @@ def clean_headline(text):
             break
         text = cleaned
     text = SOURCE_PATTERN.sub(" ", text)
+    text = REMOVED_WORDS.sub(" ", text)
     # Remove wrappers emptied by source/marker removal and dangling attribution separators.
     text = re.sub(r"\(\s*\)|\[\s*\]|\{\s*\}", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
     return text.strip(" |:;,-–—")
 
 
-def normalize_headline(text):
+def normalize_title(text):
     """Conservative identity key: Unicode, case, and whitespace normalization."""
-    return clean_headline(text).casefold()
+    return clean_title(text).casefold()
 
 
-def deduplicate_headlines(df):
+def deduplicate_titles(df):
     df = df[["title", "labels"]].dropna().copy()
-    df["title"] = df["title"].map(clean_headline)
-    df["headline_key"] = df["title"].map(normalize_headline)
+    df["title"] = df["title"].map(clean_title)
+    df["headline_key"] = df["title"].map(normalize_title)
     df = df[df["headline_key"].ne("")]
     conflicts = df.groupby("headline_key")["labels"].nunique()
     conflicts = conflicts[conflicts > 1].index
@@ -137,7 +141,7 @@ def validate_splits(dfs):
     for name, df in dfs.items():
         if df[["title", "labels"]].isna().any().any() or not df["labels"].isin([0, 1]).all():
             raise ValueError(f"Invalid titles or labels in {name} split")
-        keys = df["title"].map(normalize_headline)
+        keys = df["title"].map(normalize_title)
         if keys.eq("").any() or keys.duplicated().any() or seen.intersection(keys):
             raise ValueError("Duplicate headlines in cached splits; regenerate splits and retrain models.")
         seen.update(keys)
@@ -145,30 +149,24 @@ def validate_splits(dfs):
 
 def process_data():
     df =load_data()
-    df["full_text"] = df["title"].fillna("").str.strip() + " " + df["text"].fillna("").str.strip()
 
-    df["full_text"] = df["full_text"].str.replace(
-    r"^[A-Z][A-Z\s,.'/-]{0,80}\s+\(Reuters\)\s*[-–—]\s*",
-    "",
-    regex=True
-    )
     #remove reuters source tags
     
-    df["title"] = df["title"].map(lambda text: clean_headline(text) if isinstance(text, str) else text)
+    df["title"] = df["title"].map(lambda text: clean_title(text) if isinstance(text, str) else text)
     english_mask = df["title"].apply(is_english)
 
     df = df[english_mask]
     
 
 
-    cleaned = deduplicate_headlines(df)
+    cleaned = deduplicate_titles(df)
     cleaned = (cleaned.sample(frac=1,
                     random_state=RANDOM_SEED)
                     .reset_index(drop=True))
     return cleaned
 
 def split_data(df=None):
-    df = process_data() if df is None else deduplicate_headlines(df)
+    df = process_data() if df is None else deduplicate_titles(df)
     #returns as X_train, X_val, X_test, y_train, y_val, y_test
     train_df, temp_df = train_test_split(
         df,
@@ -217,7 +215,7 @@ def load_splits():
     ys = {}
     for split in splits:
         dfs[split] = pd.read_csv(paths[split])
-        dfs[split]["title"] = dfs[split]["title"].map(clean_headline)
+        dfs[split]["title"] = dfs[split]["title"].map(clean_title)
         Xs[split], ys[split] = dfs[split]["title"], dfs[split]["labels"]
 
     validate_splits(dfs)

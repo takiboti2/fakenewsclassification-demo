@@ -1,7 +1,7 @@
 {
-    "eval_accuracy": 0.8350549092095249,
-    "eval_precision_macro": 0.8330361189151083,
-    "eval_recall_macro": 0.8322387534160336,
-    "eval_f1_macro": 0.832616729949353,
-    "eval_log_loss": 0.3706792219773549
+    "eval_accuracy": 0.8355806872553284,
+    "eval_precision_macro": 0.8341542345758204,
+    "eval_recall_macro": 0.8317057425105532,
+    "eval_f1_macro": 0.8327613476804043,
+    "eval_log_loss": 0.36672600013661677
 }

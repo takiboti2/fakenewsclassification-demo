@@ -122,6 +122,12 @@ class ReviewFixTests(unittest.TestCase):
         df = pd.DataFrame({'title': ['https://example.com', 'Story'], 'labels': [1, 0]})
         self.assertEqual(deduplicate_headlines(df)['title'].tolist(), ['Story'])
 
+    def test_factbox_removal(self):
+        for headline in ['Factbox: Story', 'FACTBOX - Story', '[factbox] Story', '（ＦＡＣＴＢＯＸ） Story']:
+            self.assertEqual(clean_headline(headline), 'Story')
+        self.assertEqual(clean_headline('A factbox explains policy'), 'A explains policy')
+        self.assertEqual(clean_headline('Factboxes and factboxer'), 'Factboxes and factboxer')
+
     def test_label_mapping_is_inverse(self):
         with patch('utils.AutoModelForSequenceClassification.from_pretrained') as load:
             init_model('unused')

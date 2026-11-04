@@ -12,7 +12,7 @@ it does not detect semantic near-duplicates or guarantee source-independent eval
 Cached splits are checked for duplicate headlines on load.
 
 The local splits were rebuilt from the union of the existing English-filtered splits:
-42,917 training, 9,197 validation, and 9,197 test rows after marker and source cleanup. Conflicting headline groups were excluded during each cleanup. For a fresh dataset, put `WELFake_Dataset.csv` in `data/` and call
+42,914 training, 9,196 validation, and 9,196 test rows after marker and source cleanup. Conflicting headline groups were excluded during each cleanup. For a fresh dataset, put `WELFake_Dataset.csv` in `data/` and call
 `utils.split_data()` to run preprocessing and generate splits.
 
 ## Reproduce results after the split correction
@@ -60,3 +60,5 @@ as trailing attributions after a pipe or dash (for example `| Daily Wire` or `â€
 Arbitrary dash-separated headline content is retained. URL-only headlines beginning
 with http://, https://, or www. are excluded; URLs embedded in prose are preserved.
 These rules run before deduplication and split validation. Existing weights need retraining.
+
+The standalone word Factbox is removed case-insensitively before deduplication.
