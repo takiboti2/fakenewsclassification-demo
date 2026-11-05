@@ -1,0 +1,2 @@
+News headline,Model prediction,timestamp
+,"{""label"": ""True"", ""confidences"": [{""label"": ""True"", ""confidence"": 0.9796395301818848}, {""label"": ""Fake"", ""confidence"": 0.020360544323921204}]}",2026-11-05 16:23:01.866520
