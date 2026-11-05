@@ -2,3 +2,4 @@ gradio
 safetensors
 torch
 transformers
+pathlib
