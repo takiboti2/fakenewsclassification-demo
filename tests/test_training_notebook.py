@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock
 
+
 NOTEBOOK = Path(__file__).resolve().parents[1] / 'transformer_models.ipynb'
 
 class TrainingNotebookTests(unittest.TestCase):
@@ -35,7 +36,7 @@ class TrainingNotebookTests(unittest.TestCase):
                       set_seed=lambda seed: events.append(('seed', seed)),
                       init_model=initialize, AutoTokenizer=Mock(),
                       Trainer=Mock(return_value=trainer), DataCollatorWithPadding=Mock(),
-                      compute_metrics=Mock(), torch=torch, gc=gc, warnings=__import__('warnings'))
+                      compute_metrics=Mock(), torch=torch, gc=gc)
             exec(compile(ast.Module(body=[function], type_ignores=[]), str(NOTEBOOK), 'exec'), ns)
             if failure or init_failure:
                 with self.assertRaises(type(failure) if failure else RuntimeError):
@@ -77,7 +78,15 @@ class TrainingNotebookTests(unittest.TestCase):
                        {'epoch': 2, 'step': 20, 'eval_f1_macro': 0.9, 'eval_loss': 0.1},
                        {'train_runtime': 10}]
             (run_dir / 'trainer_state.json').write_text(json.dumps({'log_history': history}))
-            exec(source.replace('from pathlib import Path', ''), {'Path': lambda path: root / path})
+            tree = ast.parse(source)
+            for node in tree.body:
+                if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name):
+                    if node.targets[0].id == 'model_names':
+                        node.value = ast.parse("['bert-base-uncased']", mode='eval').body
+                    elif node.targets[0].id == 'learning_rates':
+                        node.value = ast.parse('[1e-5]', mode='eval').body
+            exec(compile(ast.fix_missing_locations(tree), str(NOTEBOOK), 'exec'),
+                 {'Path': lambda path: root / path, 'json': json})
             output = root / 'logs/bert-base-uncased_1e-05.json'
             rows = json.loads(output.read_text())
             self.assertIsInstance(rows, list)

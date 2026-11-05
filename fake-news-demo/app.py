@@ -1,8 +1,7 @@
-# app.py
-
 import gradio as gr
 import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
 
 MODEL_PATH = "model"
 

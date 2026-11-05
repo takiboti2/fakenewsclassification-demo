@@ -2,7 +2,9 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+
 import pandas as pd
+
 
 NOTEBOOK = Path(__file__).resolve().parents[1] / 'evaluation.ipynb'
 
@@ -22,10 +24,13 @@ class EvaluationNotebookTests(unittest.TestCase):
                 accessed.append(str(path))
                 self.assertEqual(str(path), 'logs')
                 return root / path
-            ns = {'pd': pd, 'Path': local_path}
-            for i in [5, 7, 8, 9]:
-                source = ''.join(nb['cells'][i]['source']).replace('from pathlib import Path', '')
-                exec(source, ns)
+            ns = {'pd': pd, 'Path': local_path, 'json': json}
+            prefixes = ('logs =', 'val_metrics =', 'val = pd.DataFrame', 'val["display_name"] =')
+            for cell in nb['cells']:
+                if cell['cell_type'] == 'code':
+                    source = ''.join(cell['source']).lstrip()
+                    if source.startswith(prefixes):
+                        exec(source, ns)
             val = ns['val']
             self.assertEqual(len(val), 2)
             row = val[val['model'] == 'baseline'].iloc[0]

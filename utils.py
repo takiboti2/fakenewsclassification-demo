@@ -1,15 +1,17 @@
-import pandas as pd
-from sklearn.model_selection import train_test_split
 from pathlib import Path
 import re
 import unicodedata
 import warnings
-import numpy as np
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support, log_loss
-from datasets import Dataset
-from transformers import AutoTokenizer,  AutoModelForSequenceClassification
 
+from datasets import Dataset
 from lingua import Language, LanguageDetectorBuilder
+import numpy as np
+import pandas as pd
+from sklearn.metrics import accuracy_score, log_loss, precision_recall_fscore_support
+from sklearn.model_selection import train_test_split
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+
 RANDOM_SEED = 42
 
 def load_data():
