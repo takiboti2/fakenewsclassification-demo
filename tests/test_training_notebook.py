@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock
 
-NOTEBOOK = Path(__file__).resolve().parents[1] / 'DistilBERT_model.ipynb'
+NOTEBOOK = Path(__file__).resolve().parents[1] / 'transformer_models.ipynb'
 
 class TrainingNotebookTests(unittest.TestCase):
     def run_training(self, failure=None, init_failure=False):
